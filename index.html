@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài Kiểm Tra Trực Tuyến - Môn Toán</title>
+  
+  <!-- KaTeX hiển thị công thức toán học sắc nét -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #1d4ed8;
+      --primary-hover: #1e40af;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #cbd5e1;
+    }
+
+    * { box-sizing: border-box; user-select: none; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      font-size: 19px; /* Cỡ chữ to, rõ ràng */
+      line-height: 1.65;
+    }
+
+    /* Thanh trạng thái cố định phía trên */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #0f172a;
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .badge {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 17px;
+    }
+    .badge-timer { background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; }
+    .badge-violation { background: #450a0a; border: 1px solid #f87171; color: #fca5a5; }
+
+    .container {
+      max-width: 920px;
+      margin: 28px auto;
+      padding: 0 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+    }
+
+    h1, h2 { margin-top: 0; color: #0f172a; }
+    h1 { font-size: 26px; }
+    h2 { font-size: 21px; }
+
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      user-select: text;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 14px 26px;
+      font-size: 19px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-submit { background: #059669; width: 100%; margin-top: 16px; }
+    .btn-submit:hover { background: #047857; }
+
+    /* Câu hỏi & Đáp án */
+    .question-title {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+      font-size: 20px;
+    }
+    .question-content {
+      margin-bottom: 18px;
+      font-size: 20px;
+    }
+    .katex { font-size: 1.15em !important; } /* Công thức toán to hơn chữ thường 15% */
+
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .option-item:hover { background: #eff6ff; border-color: var(--primary); }
+    .option-item input[type="radio"] {
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+    }
+
+    /* Cảnh báo vi phạm */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+    .modal-box {
+      background: #fff;
+      max-width: 500px;
+      width: 100%;
+      padding: 28px;
+      border-radius: 12px;
+      border-top: 6px solid var(--danger);
+      text-align: center;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+
+  <!-- Thanh giám sát -->
+  <div class="topbar hidden" id="examTopbar">
+    <div id="studentDisplay" style="font-weight: 600;"></div>
+    <div style="display: flex; gap: 12px;">
+      <div class="badge badge-violation">Vi phạm thoát màn hình: <span id="violationCount">0</span> / <span id="maxViolationText">3</span></div>
+      <div class="badge badge-timer">Thời gian: <span id="timerDisplay">45:00</span></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- MÀN HÌNH 1: ĐĂNG NHẬP THÔNG TIN -->
+    <div class="card" id="startScreen">
+      <h1>KIỂM TRA ĐỊNH KỲ MÔN TOÁN</h1>
+      <p style="color: var(--muted);">
+        <strong>Quy định phòng thi:</strong> Hệ thống sẽ tự động ghi nhận nếu bạn rời khỏi tab làm bài, thu nhỏ trình duyệt hoặc mở cửa sổ khác. Vi phạm quá <strong>3 lần</strong> bài thi sẽ tự động nộp.
+      </p>
+      
+      <div class="form-group">
+        <label for="className">Chọn lớp học (Bắt buộc):</label>
+        <select id="className">
+          <option value="">-- Chọn lớp của bạn --</option>
+          <option value="10A1">10A1</option>
+          <option value="10A2">10A2</option>
+          <option value="10A3">10A3</option>
+          <option value="11A1">11A1</option>
+          <option value="12A1">12A1</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="fullName">Họ và tên học sinh:</label>
+        <input type="text" id="fullName" placeholder="Ví dụ: Nguyễn Văn An">
+      </div>
+
+      <div class="form-group">
+        <label for="studentId">Số báo danh / Mã học sinh:</label>
+        <input type="text" id="studentId" placeholder="Ví dụ: 10A1_05">
+      </div>
+
+      <button class="btn" onclick="startExam()">Bắt đầu làm bài</button>
+    </div>
+
+    <!-- MÀN HÌNH 2: BÀI LÀM -->
+    <div id="examScreen" class="hidden">
+      <div id="questionsContainer"></div>
+      <button class="btn btn-submit" onclick="confirmSubmit()">Nộp bài kiểm tra</button>
+    </div>
+
+    <!-- MÀN HÌNH 3: KẾT QUẢ -->
+    <div class="card hidden" id="resultScreen" style="text-align: center;">
+      <h1 style="color: #059669;">ĐÃ NỘP BÀI THÀNH CÔNG</h1>
+      <p id="resultSummary" style="font-size: 21px;"></p>
+      <p id="syncStatus" style="color: var(--muted);"></p>
+    </div>
+  </div>
+
+  <!-- MODAL CẢNH BÁO VI PHẠM -->
+  <div class="modal-overlay" id="warningModal">
+    <div class="modal-box">
+      <h2 style="color: var(--danger);">CẢNH BÁO VI PHẠM QUY CHẾ!</h2>
+      <p id="warningMessage"></p>
+      <button class="btn" style="background: var(--danger);" onclick="closeWarning()">Tôi đã hiểu và quay lại làm bài</button>
+    </div>
+  </div>
+
+  <script>
+    // ================= CẤU HÌNH HỆ THỐNG =================
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwURFsY_vNYcqZ50oxvI8NusHm4_hJQLL3jPgtKOe0OdImzw47wjpCqbdL8pvLr6bEv/exec";
+    const EXAM_DURATION_MINUTES = 45; // Thời gian làm bài (phút)
+    const MAX_VIOLATIONS = 3;         // Số lần thoát màn hình tối đa trước khi tự thu bài
+
+    // ================= NGÂN HÀNG CÂU HỎI MẪU =================
+    // Lưu ý: Trong chuỗi JS, dấu gạch chéo ngược của LaTeX cần viết thành hai dấu \\ (ví dụ: \\frac{1}{2})
+    const QUESTIONS = [
+      {
+        id: 1,
+        text: "Tìm tập xác định của hàm số $y = \\frac{2x + 1}{x^2 - 4}$.",
+        options: [
+          "$D = \\mathbb{R} \\setminus \\{2\\}$",
+          "$D = \\mathbb{R} \\setminus \\{-2; 2\\}$",
+          "$D = (-2; 2)$",
+          "$D = \\mathbb{R}$"
+        ],
+        correct: 1 // Vị trí đáp án đúng (0: A, 1: B, 2: C, 3: D)
+      },
+      {
+        id: 2,
+        text: "Tính giá trị của tích phân sau: $$I = \\int_{0}^{1} (3x^2 + 2x - 1)\\,dx$$",
+        options: [
+          "$I = 1$",
+          "$I = 2$",
+          "$I = 0$",
+          "$I = 3$"
+        ],
+        correct: 0
+      },
+      {
+        id: 3,
+        text: "Nghiệm của phương trình $\\sqrt{2x - 1} = 3$ là:",
+        options: [
+          "$x = 2$",
+          "$x = 4$",
+          "$x = 5$",
+          "$x = 10$"
+        ],
+        correct: 2
+      }
+    ];
+
+    // ================= BIẾN TRẠNG THÁI =================
+    let isExamActive = false;
+    let isSubmitted = false;
+    let violationCount = 0;
+    let violationLogs = [];
+    let timeLeft = EXAM_DURATION_MINUTES * 60;
+    let timerInterval = null;
+    let lastViolationTime = 0;
+
+    function startExam() {
+      const className = document.getElementById("className").value.trim();
+      const fullName = document.getElementById("fullName").value.trim();
+      const studentId = document.getElementById("studentId").value.trim();
+
+      if (!className || !fullName || !studentId) {
+        alert("Vui lòng chọn Lớp và điền đầy đủ Họ tên, SBD trước khi vào thi.");
+        return;
+      }
+
+      // Yêu cầu toàn màn hình (nếu trình duyệt hỗ trợ)
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+
+      document.getElementById("startScreen").classList.add("hidden");
+      document.getElementById("examTopbar").classList.remove("hidden");
+      document.getElementById("examScreen").classList.remove("hidden");
+      document.getElementById("studentDisplay").textContent = `${fullName} - Lớp ${className} (${studentId})`;
+      document.getElementById("maxViolationText").textContent = MAX_VIOLATIONS;
+
+      renderQuestions();
+      isExamActive = true;
+      startTimer();
+    }
+
+    function renderQuestions() {
+      const container = document.getElementById("questionsContainer");
+      container.innerHTML = "";
+
+      QUESTIONS.forEach((q, index) => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        let optionsHtml = q.options.map((opt, optIdx) => `
+          <label class="option-item">
+            <input type="radio" name="q_${q.id}" value="${optIdx}">
+            <span><strong>${String.fromCharCode(65 + optIdx)}.</strong> ${opt}</span>
+          </label>
+        `).join("");
+
+        card.innerHTML = `
+          <div class="question-title">Câu ${index + 1}:</div>
+          <div class="question-content">${q.text}</div>
+          <div>${optionsHtml}</div>
+        `;
+        container.appendChild(card);
+      });
+
+      // Render công thức toán học bằng KaTeX
+      if (window.renderMathInElement) {
+        renderMathInElement(container, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false }
+          ]
+        });
+      }
+    }
+
+    // ================= GIÁM SÁT THOÁT MÀN HÌNH =================
+    function recordViolation(reason) {
+      if (!isExamActive || isSubmitted) return;
+
+      // Chống ghi trùng 2 sự kiện (visibilitychange + blur) trong vòng 1.5 giây
+      const now = Date.now();
+      if (now - lastViolationTime < 1500) return;
+      lastViolationTime = now;
+
+      violationCount++;
+      const timeStr = new Date().toLocaleTimeString("vi-VN");
+      violationLogs.push(`[${timeStr}] ${reason}`);
+
+      document.getElementById("violationCount").textContent = violationCount;
+
+      if (violationCount >= MAX_VIOLATIONS) {
+        submitExam(`Tự động nộp do vi phạm thoát màn hình ${violationCount} lần`);
+      } else {
+        document.getElementById("warningMessage").innerHTML = 
+          `Hệ thống phát hiện bạn vừa <strong>${reason}</strong>.<br>` +
+          `Số lần vi phạm hiện tại: <strong>${violationCount}/${MAX_VIOLATIONS}</strong>.<br>` +
+          `Nếu vi phạm thêm ${MAX_VIOLATIONS - violationCount} lần nữa, bài thi sẽ tự động khóa và nộp ngay lập tức.`;
+        document.getElementById("warningModal").style.display = "flex";
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) recordViolation("chuyển sang tab khác hoặc ẩn trình duyệt");
+    });
+
+    window.addEventListener("blur", () => {
+      recordViolation("rời khỏi cửa sổ làm bài");
+    });
+
+    function closeWarning() {
+      document.getElementById("warningModal").style.display = "none";
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    }
+
+    // ================= ĐỒNG HỒ & NỘP BÀI =================
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        const mins = Math.floor(timeLeft / 60).toString().padStart(2, "0");
+        const secs = (timeLeft % 60).toString().padStart(2, "0");
+        document.getElementById("timerDisplay").textContent = `${mins}:${secs}`;
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          submitExam("Hết thời gian làm bài");
+        }
+      }, 1000);
+    }
+
+    function confirmSubmit() {
+      if (confirm("Bạn có chắc chắn muốn nộp bài ngay bây giờ?")) {
+        submitExam("Học sinh chủ động nộp bài");
+      }
+    }
+
+    function submitExam(reason) {
+      if (isSubmitted) return;
+      isSubmitted = true;
+      isExamActive = false;
+      clearInterval(timerInterval);
+      document.getElementById("warningModal").style.display = "none";
+
+      // Tính điểm (thang điểm 10)
+      let correctCount = 0;
+      QUESTIONS.forEach(q => {
+        const selected = document.querySelector(`input[name="q_${q.id}"]:checked`);
+        if (selected && parseInt(selected.value) === q.correct) {
+          correctCount++;
+        }
+      });
+
+      const score = ((correctCount / QUESTIONS.length) * 10).toFixed(2);
+
+      // Chuyển sang màn hình kết quả
+      document.getElementById("examTopbar").classList.add("hidden");
+      document.getElementById("examScreen").classList.add("hidden");
+      document.getElementById("resultScreen").classList.remove("hidden");
+      document.getElementById("resultSummary").innerHTML = 
+        `Điểm số của bạn: <strong>${score} / 10</strong> (Đúng ${correctCount}/${QUESTIONS.length} câu)<br>` +
+        `Số lần thoát màn hình ghi nhận: <strong>${violationCount}</strong>`;
+
+      const syncEl = document.getElementById("syncStatus");
+      syncEl.textContent = "Đang gửi kết quả về bảng điểm của giáo viên...";
+
+      const payload = {
+        className: document.getElementById("className").value.trim(),
+        fullName: document.getElementById("fullName").value.trim(),
+        studentId: document.getElementById("studentId").value.trim(),
+        score: score,
+        correctCount: correctCount,
+        totalQuestions: QUESTIONS.length,
+        violations: violationCount,
+        submitReason: reason,
+        violationLog: violationLogs.join(" | ") || "Không vi phạm"
+      };
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        syncEl.style.color = "#059669";
+        syncEl.textContent = "✓ Kết quả đã được lưu vào bảng điểm tổng hợp của lớp.";
+      })
+      .catch(() => {
+        syncEl.style.color = "#dc2626";
+        syncEl.textContent = "⚠ Lỗi kết nối mạng! Hãy chụp màn hình kết quả này gửi cho giáo viên.";
+      });
+    }
+  </script>
+</body>
+</html>
